@@ -4,7 +4,7 @@
  *
  * @package    Church_Theme_Framework
  * @subpackage Classes
- * @copyright  Copyright (c) 2013, churchthemes.com
+ * @copyright  Copyright (c) 2013 - 2015, churchthemes.com
  * @link       https://github.com/churchthemes/church-theme-framework
  * @license    http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  * @since      0.9
@@ -26,13 +26,13 @@ class CTFW_Widget_Events extends CTFW_Widget {
 	 * @since 0.9
 	 */
 	function __construct() {
-	
+
 		parent::__construct(
 			'ctfw-events',
 			_x( 'CT Events', 'events widget', 'church-theme-framework' ),
 			array(
 				'description' => _x( 'Shows upcoming or past events', 'events widget', 'church-theme-framework' )
-			)			
+			)
 		);
 
 	}
@@ -71,7 +71,6 @@ class CTFW_Widget_Events extends CTFW_Widget {
 				'field_class'		=> '', // class(es) to add to field container
 				'custom_sanitize'	=> '', // function to do additional sanitization (or array( &$this, 'method' ))
 				'custom_field'		=> '', // function for custom display of field input
-				'page_templates'	=> array(), // field will not appear or save if one of these page templates are not selected (or array( &$this, 'method' ))
 				'taxonomies'		=> array(), // hide field if taxonomies are not supported
 			);
 			*/
@@ -96,13 +95,12 @@ class CTFW_Widget_Events extends CTFW_Widget {
 				'field_class'		=> '', // class(es) to add to field container
 				'custom_sanitize'	=> '', // function to do additional sanitization (or array( &$this, 'method' ))
 				'custom_field'		=> '', // function for custom display of field input
-				'page_templates'	=> array(), // field will not appear or save if one of these page templates are not selected (or array( &$this, 'method' ))
 				'taxonomies'		=> array(), // hide field if taxonomies are not supported
 			),
 
 			// Timeframe
 			'timeframe' => array(
-				'name'				=> '',
+				'name'				=> _x( 'Period', 'events widget', 'church-theme-framework' ),
 				'after_name'		=> '', // (Optional), (Required), etc.
 				'desc'				=> '',
 				'type'				=> 'radio', // text, textarea, checkbox, radio, select, number, url, image
@@ -123,10 +121,34 @@ class CTFW_Widget_Events extends CTFW_Widget {
 				'field_class'		=> '', // class(es) to add to field container
 				'custom_sanitize'	=> '', // function to do additional sanitization (or array( &$this, 'method' ))
 				'custom_field'		=> '', // function for custom display of field input
-				'page_templates'	=> array(), // field will not appear or save if one of these page templates are not selected (or array( &$this, 'method' ))
 				'taxonomies'		=> array(), // hide field if taxonomies are not supported
 			),
-			
+
+			// Category
+			'category' => array(
+				'name'				=> _x( 'Category', 'events widget', 'church-theme-framework' ),
+				'after_name'		=> '', // (Optional), (Required), etc.
+				'desc'				=> '',
+				'type'				=> 'select', // text, textarea, checkbox, radio, select, number, url, image
+				'checkbox_label'	=> '', //show text after checkbox
+				'radio_inline'		=> false, // show radio inputs inline or on top of each other
+				'number_min'		=> '', // lowest possible value for number type
+				'number_max'		=> '', // highest possible value for number type
+				'options'			=> ctfw_term_options( 'ctc_event_category', array( // array of keys/values for radio or select
+					'all' => _x( 'All Categories', 'sermons widget', 'church-theme-framework' )
+				) ),
+				'default'			=> 'all', // value to pre-populate option with (before first save or on reset)
+				'no_empty'			=> true, // if user empties value, force default to be saved instead
+				'allow_html'		=> false, // allow HTML to be used in the value (text, textarea)
+				'attributes'		=> array(), // attributes to add to input element
+				'class'				=> '', // class(es) to add to input
+				'field_attributes'	=> array(), // attr => value array for field container
+				'field_class'		=> '', // class(es) to add to field container
+				'custom_sanitize'	=> '', // function to do additional sanitization (or array( &$this, 'method' ))
+				'custom_field'		=> '', // function for custom display of field input
+				'taxonomies'		=> array( 'ctc_event_category' ), // hide field if taxonomies are not supported
+			),
+
 			// Limit
 			'limit' => array(
 				'name'				=> _x( 'Limit', 'events widget', 'church-theme-framework' ),
@@ -147,7 +169,6 @@ class CTFW_Widget_Events extends CTFW_Widget {
 				'field_class'		=> '', // class(es) to add to field container
 				'custom_sanitize'	=> '', // function to do additional sanitization (or array( &$this, 'method' ))
 				'custom_field'		=> '', // function for custom display of field input
-				'page_templates'	=> array(), // field will not appear or save if one of these page templates are not selected (or array( &$this, 'method' ))
 				'taxonomies'		=> array(), // hide field if taxonomies are not supported
 			),
 
@@ -171,10 +192,9 @@ class CTFW_Widget_Events extends CTFW_Widget {
 				'field_class'		=> 'ctfw-widget-no-bottom-margin', // class(es) to add to field container
 				'custom_sanitize'	=> '', // function to do additional sanitization (or array( &$this, 'method' ))
 				'custom_field'		=> '', // function for custom display of field input
-				'page_templates'	=> array(), // field will not appear or save if one of these page templates are not selected (or array( &$this, 'method' ))
 				'taxonomies'		=> array(), // hide field if taxonomies are not supported
 			),
-			
+
 			// Date
 			'show_date' => array(
 				'name'				=> '',
@@ -195,10 +215,9 @@ class CTFW_Widget_Events extends CTFW_Widget {
 				'field_class'		=> 'ctfw-widget-no-bottom-margin', // class(es) to add to field container
 				'custom_sanitize'	=> '', // function to do additional sanitization (or array( &$this, 'method' ))
 				'custom_field'		=> '', // function for custom display of field input
-				'page_templates'	=> array(), // field will not appear or save if one of these page templates are not selected (or array( &$this, 'method' ))
 				'taxonomies'		=> array(), // hide field if taxonomies are not supported
 			),
-			
+
 			// Time
 			'show_time' => array(
 				'name'				=> '',
@@ -219,10 +238,32 @@ class CTFW_Widget_Events extends CTFW_Widget {
 				'field_class'		=> 'ctfw-widget-no-bottom-margin', // class(es) to add to field container
 				'custom_sanitize'	=> '', // function to do additional sanitization (or array( &$this, 'method' ))
 				'custom_field'		=> '', // function for custom display of field input
-				'page_templates'	=> array(), // field will not appear or save if one of these page templates are not selected (or array( &$this, 'method' ))
 				'taxonomies'		=> array(), // hide field if taxonomies are not supported
 			),
-			
+
+			// Show Category
+			'show_category' => array(
+				'name'				=> '',
+				'after_name'		=> '', // (Optional), (Required), etc.
+				'desc'				=> '',
+				'type'				=> 'checkbox', // text, textarea, checkbox, radio, select, number, url, image
+				'radio_inline'		=> false, // show radio inputs inline or on top of each other
+				'number_min'		=> '', // lowest possible value for number type
+				'number_max'		=> '', // highest possible value for number type
+				'checkbox_label'	=> _x( 'Show category', 'events widget', 'church-theme-framework' ), //show text after checkbox
+				'options'			=> array(), // array of keys/values for radio or select
+				'default'			=> false, // value to pre-populate option with (before first save or on reset)
+				'no_empty'			=> false, // if user empties value, force default to be saved instead
+				'allow_html'		=> false, // allow HTML to be used in the value (text, textarea)
+				'attributes'		=> array(), // attributes to add to input element
+				'class'				=> '', // class(es) to add to input
+				'field_attributes'	=> array(), // attr => value array for field container
+				'field_class'		=> 'ctfw-widget-no-bottom-margin', // class(es) to add to field container
+				'custom_sanitize'	=> '', // function to do additional sanitization (or array( &$this, 'method' ))
+				'custom_field'		=> '', // function for custom display of field input
+				'taxonomies'		=> array( 'ctc_event_category' ), // hide field if taxonomies are not supported
+			),
+
 			// Excerpt
 			'show_excerpt' => array(
 				'name'				=> '',
@@ -243,15 +284,14 @@ class CTFW_Widget_Events extends CTFW_Widget {
 				'field_class'		=> '', // class(es) to add to field container
 				'custom_sanitize'	=> '', // function to do additional sanitization (or array( &$this, 'method' ))
 				'custom_field'		=> '', // function for custom display of field input
-				'page_templates'	=> array(), // field will not appear or save if one of these page templates are not selected (or array( &$this, 'method' ))
 				'taxonomies'		=> array(), // hide field if taxonomies are not supported
 			),
 
 		);
-		
+
 		// Return config
 		return $fields;
-	
+
 	}
 
 }

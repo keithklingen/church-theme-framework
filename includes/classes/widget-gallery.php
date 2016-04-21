@@ -26,7 +26,7 @@ class CTFW_Widget_Gallery extends CTFW_Widget {
 	 * @since 0.9
 	 */
 	function __construct() {
-	
+
 		parent::__construct(
 			'ctfw-gallery',
 			_x( 'CT Gallery', 'gallery widget', 'church-theme-framework' ),
@@ -82,7 +82,6 @@ class CTFW_Widget_Gallery extends CTFW_Widget {
 				'field_class'		=> '', // class(es) to add to field container
 				'custom_sanitize'	=> '', // function to do additional sanitization (or array( &$this, 'method' ))
 				'custom_field'		=> '', // function for custom display of field input
-				'page_templates'	=> array(), // field will not appear or save if one of these page templates are not selected (or array( &$this, 'method' ))
 				'taxonomies'		=> array(), // hide field if taxonomies are not supported
 			);
 			*/
@@ -107,7 +106,6 @@ class CTFW_Widget_Gallery extends CTFW_Widget {
 				'field_class'		=> '', // class(es) to add to field container
 				'custom_sanitize'	=> '', // function to do additional sanitization (or array( &$this, 'method' ))
 				'custom_field'		=> '', // function for custom display of field input
-				'page_templates'	=> array(), // field will not appear or save if one of these page templates are not selected (or array( &$this, 'method' ))
 				'taxonomies'		=> array(), // hide field if taxonomies are not supported
 			),
 
@@ -131,10 +129,9 @@ class CTFW_Widget_Gallery extends CTFW_Widget {
 				'field_class'		=> 'ctfw-widget-no-bottom-margin', // class(es) to add to field container
 				'custom_sanitize'	=> '', // function to do additional sanitization (or array( &$this, 'method' ))
 				'custom_field'		=> '', // function for custom display of field input
-				'page_templates'	=> array(), // field will not appear or save if one of these page templates are not selected (or array( &$this, 'method' ))
 				'taxonomies'		=> array(), // hide field if taxonomies are not supported
 			),
-			
+
 			// Show Link
 			'show_link' => array(
 				'name'				=> '',
@@ -155,10 +152,9 @@ class CTFW_Widget_Gallery extends CTFW_Widget {
 				'field_class'		=> '', // class(es) to add to field container
 				'custom_sanitize'	=> '', // function to do additional sanitization (or array( &$this, 'method' ))
 				'custom_field'		=> '', // function for custom display of field input
-				'page_templates'	=> array(), // field will not appear or save if one of these page templates are not selected (or array( &$this, 'method' ))
 				'taxonomies'		=> array(), // hide field if taxonomies are not supported
 			),
-			
+
 			// Order By
 			'orderby' => array(
 				'name'				=> _x( 'Order By', 'gallery widget', 'church-theme-framework' ),
@@ -183,10 +179,9 @@ class CTFW_Widget_Gallery extends CTFW_Widget {
 				'field_class'		=> 'ctfw-widget-no-bottom-margin', // class(es) to add to field container
 				'custom_sanitize'	=> '', // function to do additional sanitization (or array( &$this, 'method' ))
 				'custom_field'		=> '', // function for custom display of field input
-				'page_templates'	=> array(), // field will not appear or save if one of these page templates are not selected (or array( &$this, 'method' ))
 				'taxonomies'		=> array(), // hide field if taxonomies are not supported
 			),
-			
+
 			// Order
 			'order' => array(
 				'name'				=> '',
@@ -210,10 +205,9 @@ class CTFW_Widget_Gallery extends CTFW_Widget {
 				'field_class'		=> '', // class(es) to add to field container
 				'custom_sanitize'	=> '', // function to do additional sanitization (or array( &$this, 'method' ))
 				'custom_field'		=> '', // function for custom display of field input
-				'page_templates'	=> array(), // field will not appear or save if one of these page templates are not selected (or array( &$this, 'method' ))
 				'taxonomies'		=> array(), // hide field if taxonomies are not supported
 			),
-			
+
 			// Limit
 			'limit' => array(
 				'name'				=> _x( 'Limit', 'gallery widget', 'church-theme-framework' ),
@@ -234,10 +228,9 @@ class CTFW_Widget_Gallery extends CTFW_Widget {
 				'field_class'		=> '', // class(es) to add to field container
 				'custom_sanitize'	=> '', // function to do additional sanitization (or array( &$this, 'method' ))
 				'custom_field'		=> '', // function for custom display of field input
-				'page_templates'	=> array(), // field will not appear or save if one of these page templates are not selected (or array( &$this, 'method' ))
 				'taxonomies'		=> array(), // hide field if taxonomies are not supported
 			),
-			
+
 			// Thumbnail Size
 			'thumb_size' => array(
 				'name'				=> _x( 'Thumbnail Size', 'gallery widget', 'church-theme-framework' ),
@@ -262,17 +255,16 @@ class CTFW_Widget_Gallery extends CTFW_Widget {
 				'field_class'		=> '', // class(es) to add to field container
 				'custom_sanitize'	=> '', // function to do additional sanitization (or array( &$this, 'method' ))
 				'custom_field'		=> '', // function for custom display of field input
-				'page_templates'	=> array(), // field will not appear or save if one of these page templates are not selected (or array( &$this, 'method' ))
 				'taxonomies'		=> array(), // hide field if taxonomies are not supported
 			),
 
 		);
-		
+
 		// Return config
 		return $fields;
-	
+
 	}
-	
+
 	/**
 	 * Get posts
 	 *
@@ -294,7 +286,7 @@ class CTFW_Widget_Gallery extends CTFW_Widget {
 			'posts_per_page'	=> $this->ctfw_instance['limit'],
 			'orderby'			=> $this->ctfw_instance['orderby'],
 			'order'				=> $this->ctfw_instance['order'],
-			'no_found_rows'		=> true // faster
+			'no_found_rows'		=> true // faster (no pagination)
 		);
 
 		// All Galleries - get images attached to Gallery posts/pages
@@ -326,7 +318,7 @@ class CTFW_Widget_Gallery extends CTFW_Widget {
 
 		// Return filtered
 		return apply_filters( 'ctfw_gallery_widget_get_posts', $posts );
-		
+
 	}
-		
+
 }

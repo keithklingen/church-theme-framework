@@ -21,14 +21,14 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  * @since 0.9
  */
 class CTFW_Widget_Archives extends CTFW_Widget {
-	
+
 	/**
 	 * Register widget with WordPress
 	 *
 	 * @since 0.9
 	 */
 	function __construct() {
-	
+
 		parent::__construct(
 			'ctfw-archives',
 			_x( 'CT Archives', 'widget', 'church-theme-framework' ),
@@ -73,7 +73,6 @@ class CTFW_Widget_Archives extends CTFW_Widget {
 				'field_class'		=> '', // class(es) to add to field container
 				'custom_sanitize'	=> '', // function to do additional sanitization (or array( &$this, 'method' ))
 				'custom_field'		=> '', // function for custom display of field input
-				'page_templates'	=> array(), // field will not appear or save if one of these page templates are not selected (or array( &$this, 'method' ))
 				'taxonomies'		=> array(), // hide field if taxonomies are not supported
 			);
 			*/
@@ -98,10 +97,9 @@ class CTFW_Widget_Archives extends CTFW_Widget {
 				'field_class'		=> '', // class(es) to add to field container
 				'custom_sanitize'	=> '', // function to do additional sanitization (or array( &$this, 'method' ))
 				'custom_field'		=> '', // function for custom display of field input
-				'page_templates'	=> array(), // field will not appear or save if one of these page templates are not selected (or array( &$this, 'method' ))
 				'taxonomies'		=> array(), // hide field if taxonomies are not supported
 			),
-			
+
 			// Type
 			'post_type' => array(
 				'name'				=> _x( 'Type', 'archives widget', 'church-theme-framework' ),
@@ -122,10 +120,9 @@ class CTFW_Widget_Archives extends CTFW_Widget {
 				'field_class'		=> '', // class(es) to add to field container
 				'custom_sanitize'	=> '', // function to do additional sanitization (or array( &$this, 'method' ))
 				'custom_field'		=> '', // function for custom display of field input
-				'page_templates'	=> array(), // field will not appear or save if one of these page templates are not selected (or array( &$this, 'method' ))
 				'taxonomies'		=> array(), // hide field if taxonomies are not supported
 			),
-			
+
 			// Limit
 			'limit' => array(
 				'name'				=> _x( 'Limit', 'archives widget', 'church-theme-framework' ),
@@ -146,10 +143,9 @@ class CTFW_Widget_Archives extends CTFW_Widget {
 				'field_class'		=> '', // class(es) to add to field container
 				'custom_sanitize'	=> '', // function to do additional sanitization (or array( &$this, 'method' ))
 				'custom_field'		=> '', // function for custom display of field input
-				'page_templates'	=> array(), // field will not appear or save if one of these page templates are not selected (or array( &$this, 'method' ))
 				'taxonomies'		=> array(), // hide field if taxonomies are not supported
 			),
-			
+
 			// Count
 			'show_count' => array(
 				'name'				=> '',
@@ -170,7 +166,6 @@ class CTFW_Widget_Archives extends CTFW_Widget {
 				'field_class'		=> 'ctfw-widget-no-bottom-margin', // class(es) to add to field container
 				'custom_sanitize'	=> '', // function to do additional sanitization (or array( &$this, 'method' ))
 				'custom_field'		=> '', // function for custom display of field input
-				'page_templates'	=> array(), // field will not appear or save if one of these page templates are not selected (or array( &$this, 'method' ))
 				'taxonomies'		=> array(), // hide field if taxonomies are not supported
 			),
 
@@ -194,14 +189,13 @@ class CTFW_Widget_Archives extends CTFW_Widget {
 				'field_class'		=> '', // class(es) to add to field container
 				'custom_sanitize'	=> '', // function to do additional sanitization (or array( &$this, 'method' ))
 				'custom_field'		=> '', // function for custom display of field input
-				'page_templates'	=> array(), // field will not appear or save if one of these page templates are not selected (or array( &$this, 'method' ))
 				'taxonomies'		=> array(), // hide field if taxonomies are not supported
 			),
 
 		);
-		
+
 		return $fields;
-	
+
 	}
 
 	/**
@@ -211,7 +205,7 @@ class CTFW_Widget_Archives extends CTFW_Widget {
 	 * @return array Options for post type field
 	 */
 	function ctfw_post_type_options() {
-	
+
 		$options = array();
 
 		// Get supported post types with archives
@@ -220,15 +214,15 @@ class CTFW_Widget_Archives extends CTFW_Widget {
 			'show_ui'		=> true, // theme support or plugin settings may set false
 			'has_archive'	=> true
 		), 'objects' );
-		
+
 		// Loop post types
 		foreach ( $post_types as $post_type_slug => $post_type_object ) {
-		
+
 			$post_type_name = $post_type_object->labels->name;
-		
+
 			// Add to array
 			$options[$post_type_slug] = $post_type_name;
-		
+
 		}
 
 		// Add blog post type with special name (has_archive excludes it)
@@ -238,12 +232,12 @@ class CTFW_Widget_Archives extends CTFW_Widget {
 			),
 			$options
 		);
-		
+
 		// Return filtered
 		return apply_filters( 'ctfw_archives_widget_post_type_options', $options );
-		
+
 	}
-	
+
 	/**
 	 * Get archives
 	 *
@@ -255,48 +249,14 @@ class CTFW_Widget_Archives extends CTFW_Widget {
 	 */
 	function ctfw_get_archives() {
 
-		global $wpdb;
-
-		// Get post type
-		$post_type = $this->ctfw_instance['post_type'];
-		
-		// Get limit
-		$limit = absint( $this->ctfw_instance['limit'] );
-		$sql_limit = '';
-		if ( $limit > 0 ) {
-			$sql_limit = $wpdb->prepare(
-				"LIMIT %d",
-				array(
-					$limit
-				)
-			);
-		}
-
 		// Get archive months
-		$archives = (array) $wpdb->get_results( $wpdb->prepare(
-			"
-				SELECT
-					YEAR(post_date) AS `year`,
-					MONTH(post_date) AS `month`,
-					count(ID) as posts
-				FROM $wpdb->posts
-				WHERE
-					post_type = %s
-					AND post_status = 'publish'
-				GROUP BY
-					YEAR(post_date),
-					MONTH(post_date)
-				ORDER BY post_date DESC
-				$sql_limit
-			",
-			array(
-				$post_type
-			)
+		$archives = ctfw_get_month_archives( $this->ctfw_instance['post_type'], array(
+			'limit'	=> $this->ctfw_instance['limit'],
 		) );
-	
+
 		// Return filtered
 		return apply_filters( 'ctfw_archives_widget_get_archives', $archives );
-	
+
 	}
 
 }

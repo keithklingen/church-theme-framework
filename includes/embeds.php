@@ -86,7 +86,7 @@ function ctfw_generic_embeds( $html ) {
 	// Does theme support this?
 	if ( current_theme_supports( 'ctfw-generic-embeds' ) ) {
 
-		// Get iframe source URL
+		// Get iframe source URL (Theme Check false positive)
 		preg_match_all( '/<iframe[^>]+src=([\'"])(.+?)\1[^>]*>/i', $html, $matches );
 		$url = ! empty( $matches[2][0] ) ? $matches[2][0] : '';
 
@@ -122,7 +122,7 @@ function ctfw_generic_embeds( $html ) {
 
 			// Modify URL
 			$args = apply_filters( 'ctfw_generic_embeds_add_args', $args, $source );
-			$new_url = add_query_arg( $args, $url );
+			$new_url = esc_url( add_query_arg( $args, $url ) );
 
 			// Replace source with modified URL
 			if ( $new_url != $url ) {
@@ -138,3 +138,34 @@ function ctfw_generic_embeds( $html ) {
 }
 
 add_filter( 'embed_oembed_html', 'ctfw_generic_embeds' );
+
+/**
+ * HTML5 valid embeds
+ *
+ * This will correct YouTube embed code that is not HTML5 valid.
+ * Other sources may be added later.
+ *
+ * Enable with add_theme_support( 'ctfw-valid-embeds' );
+ *
+ * @since 1.7
+ * @param string $html Embed HTML code
+ * @return string Modified embed HTML code
+ */
+function ctfw_valid_embeds( $html ) {
+
+	// Does theme support this?
+	if ( current_theme_supports( 'ctfw-valid-embeds' ) ) {
+
+		// YouTube, Vimeo, etc.
+	 	$html = str_replace( 'frameborder="0"', 'style="border: none;"', $html );
+
+		// Vimeo
+	 	$html = preg_replace( '( webkitallowfullscreen| mozallowfullscreen)', '$1', $html );
+
+	}
+
+	return $html;
+
+}
+
+add_filter( 'embed_oembed_html', 'ctfw_valid_embeds' );

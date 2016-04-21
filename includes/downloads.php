@@ -4,7 +4,7 @@
  *
  * @package    Church_Theme_Framework
  * @subpackage Functions
- * @copyright  Copyright (c) 2013, churchthemes.com
+ * @copyright  Copyright (c) 2013 - 2015, churchthemes.com
  * @link       https://github.com/churchthemes/church-theme-framework
  * @license    http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  * @since      0.9
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  * Force download of certain file types via ?download=path/filename.type
  *
  * This prompts "Save As" -- handy for MP3, PDF, etc. Only works on local files.
- * 
+ *
  * This information was useful: http://wordpress.stackexchange.com/questions/3480/how-can-i-force-a-file-download-in-the-wordpress-backend
  *
  * Use add_theme_support( 'ctfw_force_downloads' );
@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  * @global object $wp_filesystem;
  */
 function ctfw_force_download() {
-	
+
     global $wp_query, $wp_filesystem;
 
 	// Theme supports this?
@@ -72,18 +72,19 @@ function ctfw_force_download() {
 					// clear buffering just in case
 					@ob_end_clean();
 					flush();
-					
+
 					// Prepare to use WP_Filesystem
+					/* See comments below
 					if ( ! class_exists( 'WP_Filesystem_Base') ) {
 						require_once ABSPATH . 'wp-admin/includes/file.php';
 					}
 					WP_Filesystem();
+					*/
 
 					// Output file contents using Direct method
-					// This is like using echo file_get_contents()
-					// readfile() should be more efficient but generates Theme Check warning RE: WP Filesystem
-					//@readfile( $upload_file_path ); // suppress errors
-					echo $wp_filesystem->get_contents( $upload_file_path );
+					// readfile more efficient; WP_Filesystem security used, causes Theme Check warning
+					//echo $wp_filesystem->get_contents( $upload_file_path );
+					@readfile( $upload_file_path );
 
 					// we're done, stop further execution
 					exit;
@@ -91,13 +92,13 @@ function ctfw_force_download() {
 				}
 
 			}
-			
+
 		}
 
 		// failure of any type results in 404 file not found
 	    $wp_query->set_404();
 	    status_header( 404 );
-		
+
 	}
 
 }
@@ -105,11 +106,55 @@ function ctfw_force_download() {
 add_action( 'template_redirect', 'ctfw_force_download' );
 
 /**
- * Convert regular URL to one that forces download ("Save As")
+ * Get download URL
+ *
+ * If URL is local and theme supports 'ctfw-force-downloads', it will be piped through script to send "Save As" headers.
+ * Otherwise, original URL will be returned (local or external) but only if it has an extension (ie. not URL to YouTube, SoundCloud, etc.)
+ *
+ * On <a> tags use download="download" attribute to attempt "Save As" for externally hosted files.
+ * As of October, 2015, download attribute works on 60% browser use. When near 100%, will deprecate ctfw_force_download_url().
+ *
+ * Makes this:	http://yourname.com/?download=%2F2009%2F10%2Ffile.pdf
+ * Out of:		http://yourname.com/wp-content/uploads/2013/05/file.pdf
+ * 				http://yourname.com/wp-content/uploads/sites/6/2013/05/file.pdf (multisite)
+ *
+ * @since 1.7.2
+ * @param string $url URL for file
+ * @return string URL modified to force Save As if local or as is if external and has extension
+ */
+function ctfw_download_url( $url ) {
+
+	// May return original URL if is external and has extension
+	$download_url = $url;
+
+	// Has extension?
+	// If not, is not actual file (may be URL to SoundCloud, YouTube, etc.)
+	$filetype = wp_check_filetype( $download_url ); // remove any query string
+	if ( empty( $filetype['ext'] ) ) {
+
+		// Return nothing; there is no file to download
+		$download_url = '';
+
+	} else {
+
+		// If local and theme supports it, force "Save As" headers by piping via special URL
+		$download_url = ctfw_force_download_url( $download_url );
+
+	}
+
+	return apply_filters( 'ctfw_download_url', $download_url, $url );
+
+}
+
+/**
+ * Convert download URL to one that forces "Save As" via headers
  *
  * This keeps the browser from doing what it wants with the file (such as play MP3 or show PDF).
  * Note that file must be in uploads folder and extension must be allowed by WordPress.
- * 
+ *
+ * See ctfw_download_url() which uses this. Use it with download="download" attribute as fallback.
+ * This function will be deprecated when near 100% browser support exists for the attribute.
+ *
  * Makes this:	http://yourname.com/?download=%2F2009%2F10%2Ffile.pdf
  * Out of:		http://yourname.com/wp-content/uploads/2013/05/file.pdf
  * 				http://yourname.com/wp-content/uploads/sites/6/2013/05/file.pdf (multisite)
@@ -137,8 +182,15 @@ function ctfw_force_download_url( $url ) {
 			$relative_url = str_replace( $upload_dir_url, '', $url ); // remove base URL
 			$relative_url = ltrim( $relative_url ); // remove preceding slash
 
-			// Add ?download=file to site URL
-			$download_url = home_url( '/' ) . '?download=' . urlencode( $relative_url );
+			// Is it actually relative?
+			// If file is outside of upload directory, it won't be
+			// And in that case it cannot be piped through ?download
+			if ( ! preg_match( '/\:\/\//', $relative_url ) ) {
+
+				// Add ?download=file to site URL
+				$download_url = home_url( '/' ) . '?download=' . urlencode( $relative_url ) . '&nocache';
+
+			}
 
 		}
 

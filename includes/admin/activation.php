@@ -4,7 +4,7 @@
  *
  * @package    Church_Theme_Framework
  * @subpackage Admin
- * @copyright  Copyright (c) 2013, churchthemes.com
+ * @copyright  Copyright (c) 2013 - 2015, churchthemes.com
  * @link       https://github.com/churchthemes/church-theme-framework
  * @license    http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  * @since      0.9
@@ -30,49 +30,41 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  * This does not affect the Customizer preview.
  *
  * @since 0.9
- * @global object $wp_rewrite
  */
 function ctfw_after_activation() {
 
-	global $wp_rewrite;
+	// Does theme support this?
+	$support = get_theme_support( 'ctfw-after-activation' );
+	if ( $support ) {
 
-	// Theme was just activated
-	if ( ! empty( $_GET['activated'] ) ) {
+		// What to do
+		$activation_tasks = isset( $support[0] ) ? $support[0] : array();
 
-		// Does theme support this?
-		$support = get_theme_support( 'ctfw-after-activation' );
-		if ( $support ) {
+		// Update .htaccess to make sure friendly URL's are in working order
+		if ( ! empty( $activation_tasks['flush_rewrite_rules'] ) ) {
+			flush_rewrite_rules();
+		}
 
-			// What to do
-			$activation_tasks = isset( $support[0] ) ? $support[0] : array();
+		// Show notice to user
+		if ( ! empty( $activation_tasks['notice'] ) ) {
 
-			// Update .htaccess to make sure friendly URL's are in working order
-			if ( ! empty( $activation_tasks['flush_rewrite_rules'] ) ) {
-				flush_rewrite_rules();
+			add_action( 'admin_notices', 'ctfw_activation_notice', 5 ); // show above other notices
+
+			// Hide default notice
+			if ( ! empty( $activation_tasks['hide_default_notice'] ) ) {
+				add_action( 'admin_head', 'ctfw_hide_default_activation_notice' );
 			}
 
-			// Show notice to user
-			if ( ! empty( $activation_tasks['notice'] ) ) {
-
-				add_action( 'admin_notices', 'ctfw_activation_notice', 5 ); // show above other notices
-
-				// Hide default notice
-				if ( ! empty( $activation_tasks['hide_default_notice'] ) ) {
-					add_action( 'admin_head', 'ctfw_hide_default_activation_notice' );
-				}
-
-				// Remove other notices when showing activation notice -- keep it simple
-				ctfw_activation_remove_notices();
-
-			}
+			// Remove other notices when showing activation notice -- keep it simple
+			ctfw_activation_remove_notices();
 
 		}
 
 	}
-	
+
 }
 
-add_action( 'load-themes.php', 'ctfw_after_activation' );
+add_action( 'after_switch_theme', 'ctfw_after_activation' );
 
 /********************************************
  * NOTICES

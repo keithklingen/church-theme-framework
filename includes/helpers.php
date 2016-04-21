@@ -63,7 +63,7 @@ function ctfw_is_url( $string ) {
  * @since 0.9
  * @param string $url URL to test
  * @return bool True if URL is local
- */ 
+ */
 function ctfw_is_local_url( $url ) {
 
 	$bool = false;
@@ -86,41 +86,46 @@ function ctfw_is_local_url( $url ) {
  */
 function ctfw_site_path() {
 
-	// Just get everything after the domain in the site URL
-	list( , $path ) = explode( $_SERVER['HTTP_HOST'], home_url( '/' ) );
+	$path = '';
+
+	$parsed_url = parse_url( home_url( '/' ) );
+
+	if ( isset( $parsed_url['path'] ) ) {
+		$path = $parsed_url['path'];
+	}
 
 	return apply_filters( 'ctfw_site_path', $path );
 
 }
 
 /**
- * Retrieve the url of a file in the theme. 
- * 
- * Searches in the stylesheet directory before the template directory so themes 
+ * Retrieve the url of a file in the theme.
+ *
+ * Searches in the stylesheet directory before the template directory so themes
  * which inherit from a parent theme can just override one file.
- * 
+ *
  * This is from here and will likely be part of WordPress core. At that time, move this to deprecated.php.
  * http://core.trac.wordpress.org/attachment/ticket/18302/18302.12.diff
  * http://core.trac.wordpress.org/ticket/18302
- * 
+ *
  * @since 0.9
  * @param string $file File to search for in the stylesheet directory
  * @return string The URL of the file
  */
 function ctfw_theme_url( $file = '' ) {
 
-	$file = ltrim( $file, '/' ); 
- 
-	if ( empty( $file ) ) { 
-		$url = get_stylesheet_directory_uri(); 
-	} elseif( is_child_theme() && file_exists( get_stylesheet_directory() . "/$file" ) ) { 
-		$url = get_stylesheet_directory_uri() . "/$file"; 
-	} else { 
-		$url = get_template_directory_uri() . "/$file"; 
+	$file = ltrim( $file, '/' );
+
+	if ( empty( $file ) ) {
+		$url = get_stylesheet_directory_uri();
+	} elseif( is_child_theme() && file_exists( get_stylesheet_directory() . "/$file" ) ) {
+		$url = get_stylesheet_directory_uri() . "/$file";
+	} else {
+		$url = get_template_directory_uri() . "/$file";
 	}
-	
+
 	return apply_filters( 'ctfw_theme_url', $url, $file );
-	
+
 }
 
 /**
@@ -161,7 +166,8 @@ function ctfw_sanitize_url_list( $urls, $allowed_strings = array() ) {
 				'https',
 				'feed',
 				'itms', // iTunes Music Store
-				'skype'
+				'skype',
+				'mailto',
 			) );
 
 		}
@@ -204,18 +210,39 @@ function ctfw_array_merge_after_key( $original_array, $insert_array, $after_key 
 
 	// loop original array items
 	foreach ( $original_array as $item_key => $item_value ) {
-	
+
 		// rebuild the array one item at a time
 		$modified_array[$item_key] = $item_value;
-		
+
 		// insert array after specific key
 		if ( $item_key == $after_key ) {
 			$modified_array = array_merge( $modified_array, $insert_array );
 		}
-	
+
 	}
 
 	return apply_filters( 'ctfw_array_merge_after_key', $modified_array, $original_array, $insert_array, $after_key );
+
+}
+
+/**
+ * Show array as HTML
+ *
+ * This is helpful for development / debugging
+ *
+ * @since 1.4
+ * @param array $array Array to format
+ * @param bool $return Return or echo output
+ */
+function ctfw_print_array( $array, $return = false ) {
+
+	$result = '<pre>' . print_r( $array, true ) . '</pre>';
+
+	if ( empty($return) ) {
+		echo $result;
+	} else {
+		return $result;
+	}
 
 }
 
@@ -238,18 +265,45 @@ function ctfw_shorten( $string, $max_chars ) {
 
 	$max_chars = absint( $max_chars );
 
-	// Shorten to within X characters without cutting words in half
-	if ( $max_chars && mb_strlen( $string ) > $max_chars ) {
+	// Use multibyte functions if available (helpful for non-English characters)
+	// Some hosts disable multibyte functions
+	if ( function_exists( 'mb_strlen' ) && function_exists( 'mb_substr' ) && function_exists( 'mb_strrpos' ) ) {
 
-		// Shorten
-		$haystack = mb_substr( $string, 0, $max_chars );
-		$length = mb_strrpos( $haystack, ' ' );
-		$processed_string = mb_substr( $string, 0, $length );
+		// Shorten to within X characters without cutting words in half
+		if ( $max_chars && mb_strlen( $string ) > $max_chars ) {
 
-		// Append ... if string was shortened
-		if ( mb_strlen( $processed_string ) < mb_strlen( $string ) ) {
-			/* translators: ... after shortened string */
-			$processed_string .= _x( '&hellip;', 'shortened text', 'church-theme-framework' );
+			// Shorten
+			$haystack = mb_substr( $string, 0, $max_chars );
+			$length = mb_strrpos( $haystack, ' ' );
+			$processed_string = mb_substr( $string, 0, $length );
+
+			// Append ... if string was shortened
+			if ( mb_strlen( $processed_string ) < mb_strlen( $string ) ) {
+				/* translators: ... after shortened string */
+				$processed_string .= _x( '&hellip;', 'shortened text', 'church-theme-framework' );
+			}
+
+		}
+
+	}
+
+	// Same code as above but using non-multibyte functions
+	else {
+
+		// Shorten to within X characters without cutting words in half
+		if ( $max_chars && strlen( $string ) > $max_chars ) {
+
+			// Shorten
+			$haystack = substr( $string, 0, $max_chars );
+			$length = strrpos( $haystack, ' ' );
+			$processed_string = substr( $string, 0, $length );
+
+			// Append ... if string was shortened
+			if ( strlen( $processed_string ) < strlen( $string ) ) {
+				/* translators: ... after shortened string */
+				$processed_string .= _x( '&hellip;', 'shortened text', 'church-theme-framework' );
+			}
+
 		}
 
 	}
@@ -273,15 +327,32 @@ function ctfw_shorten( $string, $max_chars ) {
  * @param string $address Multi-line address
  * @return string Single line address
  */
+function ctfw_one_line( $string ) {
+
+	$one_line = $string;
+
+	if ( $string ) {
+		$one_line = strip_tags( $string ); // remove HTML
+		$one_line = preg_replace( '/\r\n|\n|\r/', ', ', $one_line ); // replace line breaks with commas
+		$one_line = trim( $one_line ); // remove whitespace
+	}
+
+	return apply_filters( 'ctfw_one_line', $one_line, $string );
+
+}
+
+/**
+ * Convert address to one line
+ *
+ * It replaces line breaks with commas.
+ *
+ * @since 0.9
+ * @param string $address Multi-line address
+ * @return string Single line address
+ */
 function ctfw_address_one_line( $address ) {
 
-	$address_one_line = $address;
-
-	if ( $address ) {
-		$address_one_line = strip_tags( $address ); // remove HTML
-		$address_one_line = str_replace( "\n", ', ', $address_one_line ); // replace line breaks with commas
-		$address_one_line = trim( $address_one_line ); // remove whitespace
-	}
+	$address_one_line = ctfw_one_line( $address );
 
 	return apply_filters( 'ctfw_address_one_line', $address_one_line, $address );
 
@@ -290,7 +361,7 @@ function ctfw_address_one_line( $address ) {
 /**
  * Make a Church Theme Content post type or taxonomy name friendly
  *
- * This is handy for get_template_part( 'content', ctfw_make_friendly( get_post_type() ) );
+ * This is handy for get_template_part( CTFW_THEME_PARTIAL_DIR . '/content', ctfw_make_friendly( get_post_type() ) );
  * which produces content-post-type.php instead of content-ctc_post_type.php
  *
  * @since 0.9

@@ -63,14 +63,19 @@ function ctfw_old_wp_message() {
 
 /**
  * Prevent switching to theme on old version of WordPress
- * 
+ *
  * Switches to the previously activated theme or the default theme.
  *
  * @since 0.9
  * @param string $theme_name Theme slug
  * @param object $theme Theme object
  */
-function ctfw_old_wp_switch_theme( $theme_name, $theme ) {
+function ctfw_old_wp_switch_theme( $theme_name, $theme = false ) {
+
+	// Old theme still exists
+	if ( ! $theme ) {
+		return;
+	}
 
 	// Is WordPress version too old for theme?
 	if ( ctfw_old_wp() ) {
@@ -166,13 +171,13 @@ function ctfw_ctc_plugin_active() {
 	$activated = false;
 
 	include_once ABSPATH . 'wp-admin/includes/plugin.php';
-	
+
 	if ( is_plugin_active( ctfw_ctc_plugin_file() ) ) {
 		$activated = true;
 	}
 
 	return apply_filters( 'ctfw_ctc_plugin_active', $activated );
-		
+
 }
 
 /**
@@ -190,7 +195,7 @@ function ctfw_ctc_plugin_installed() {
 	}
 
 	return apply_filters( 'ctfw_ctc_plugin_installed', $installed );
-		
+
 }
 
 /**
@@ -206,6 +211,14 @@ function ctfw_ctc_plugin_notice() {
 	$screen = get_current_screen();
 	if ( ! in_array( $screen->base, array( 'dashboard', 'themes', 'plugins' ) ) ) {
 		return;
+	}
+
+	// Prevent plugins (CTC add-ons) from showing similar notice
+	// Make sure this is always after last return above, meaning a notice is being shown
+	if ( ! empty( $GLOBALS['ctc_install_notice_sent'] ) ) {
+		return;
+	} else {
+		$GLOBALS['ctc_install_notice_sent'] = true;
 	}
 
 	// Plugin not installed
@@ -232,7 +245,7 @@ function ctfw_ctc_plugin_notice() {
 	if (  isset( $notice ) ) {
 
 		?>
-		<div class="updated">
+		<div class="error">
 			<p>
 				<?php echo $notice; ?>
 			</p>
@@ -243,7 +256,7 @@ function ctfw_ctc_plugin_notice() {
 
 }
 
-add_action( 'admin_notices', 'ctfw_ctc_plugin_notice' );
+add_action( 'admin_notices', 'ctfw_ctc_plugin_notice', 9 ); // higher priority than notices coming from plugin (theme notice before plugin addon notices)
 
 /*******************************************
  * BROWSERS
@@ -294,7 +307,7 @@ function ctfw_enqueue_ie_unsupported() {
 			'redirect_url' => apply_filters( 'ctfw_upgrade_browser_url', 'http://browsehappy.com/' )
 		) );
 
-	}	
+	}
 
 }
 

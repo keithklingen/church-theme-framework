@@ -4,7 +4,7 @@
  *
  * @package    Church_Theme_Framework
  * @subpackage Functions
- * @copyright  Copyright (c) 2013, churchthemes.com
+ * @copyright  Copyright (c) 2013 - 2015, churchthemes.com
  * @link       https://github.com/churchthemes/church-theme-framework
  * @license    http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  * @since      0.9
@@ -19,10 +19,10 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
  * Custom Post Type Date Archive Setup
- * 
+ *
  * At time of making, WordPress (3.6 and possibly later) does not support dated archives for custom post types as it does for standard posts.
  * This injects rules so that URL's like /cpt/2012/05 can be used with the custom post type archive template.
- * 
+ *
  * Note: resave permalinks if ever change this
  *
  * Thanks to Milan Petrovic for his guide: http://www.dev4press.com/2012/tutorials/wordpress/practical/url-rewriting-custom-post-types-date-archive/
@@ -42,7 +42,7 @@ function ctfw_cpt_date_archive_setup( $post_types, $wp_rewrite ) {
 
 		// Cast single post type as array
 		$post_types = (array) $post_types;
-		
+
 		// Loop given post types to build rules
 		foreach ( $post_types as $post_type_slug ) {
 
@@ -54,30 +54,30 @@ function ctfw_cpt_date_archive_setup( $post_types, $wp_rewrite ) {
 
 				// Date archive rules
 				$date_rules = array(
-				
+
 					// Year, Month, Day: /cpt-slug/2012/01/1
 					array(
 						'rule' => '([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})', // URL pattern
 						'vars' => array( 'year', 'monthnum', 'day' ) // corresponding query parameters
 					),
-					
+
 					// Year, Month: /cpt-slug/2012/01
 					array(
 						'rule' => '([0-9]{4})/([0-9]{1,2})',
 						'vars' => array( 'year', 'monthnum' )
 					),
-					
+
 					// Day: /cpt-slug/2012
 					array(
 						'rule' => '([0-9]{4})',
 						'vars' => array( 'year' )
 					)
-					
+
 				);
 
 				// Build rewrite rules and queries
 				foreach ( $date_rules as $date_rule ) {
-				
+
 					// Base query
 					$query = 'index.php?post_type=' . $post_type_slug;
 
@@ -91,21 +91,21 @@ function ctfw_cpt_date_archive_setup( $post_types, $wp_rewrite ) {
 					// Base rule
 					$archive_slug = ! empty( $post_type->rewrite['slug'] ) ? $post_type->rewrite['slug'] : $post_type->name; // use rewrite slug if provided; otherwise post type slug
 					$rule = $archive_slug . '/'. $date_rule['rule'];
-					
+
 					// Date URL
 					$rules[$rule . '/?$' ] = $query;
-					
+
 					// Feed URLs
 					$rules[$rule . '/feed/(feed|rdf|rss|rss2|atom)/?$' ] = $query . '&feed=' . $wp_rewrite->preg_index( $i );
 					$rules[$rule . '/(feed|rdf|rss|rss2|atom)/?$' ] = $query . '&feed=' . $wp_rewrite->preg_index( $i );
-					
+
 					// Paginated URLs
 					$rules[$rule . '/page/([0-9]{1,})/?$' ] = $query . '&paged=' . $wp_rewrite->preg_index( $i );
-					
+
 				}
-				
+
 			}
-			
+
 		}
 
 	}
@@ -145,19 +145,48 @@ function ctfw_post_type_get_month_link( $year, $month, $post_type = false ) {
 
 	if ( ! empty( $monthlink ) ) { // using pretty permalinks
 
-		// Get rewrite slug for post type
-		$slug = '';
-		if ( ! empty( $post_type ) ) {
-			$post_type_object = get_post_type_object( $post_type );
-			if ( isset( $post_type_object->rewrite['slug'] ) ) {
-				$slug = $post_type_object->rewrite['slug'];
-			}
-		}
-
 		$monthlink = str_replace( '%year%', $year, $monthlink );
 		$monthlink = str_replace( '%monthnum%', zeroise( intval( $month ), 2 ), $monthlink );
 
-		return apply_filters( 'ctfw_post_type_month_link', home_url( $slug . user_trailingslashit( $monthlink, 'month' ) ), $year, $month );
+		// Get rewrite slug for post type
+		$slug = '';
+		if ( ! empty( $post_type ) ) {
+
+			$post_type_object = get_post_type_object( $post_type );
+
+			if ( isset( $post_type_object->rewrite['slug'] ) ) {
+				$slug = $post_type_object->rewrite['slug'];
+			}
+
+		}
+
+		// Path
+		$path = user_trailingslashit( $monthlink, 'month' );
+
+		// Have a custom post type slug?
+		if ( $slug ) {
+
+			// Path with custom post type slug
+			$path = $slug . $path;
+
+			// PATHINFO fix
+			// "Almost Pretty Permalinks" will make sermons/index.php/2015/01/
+			// Move index.php/ to front in that case
+			if ( preg_match( '/index\.php/', $path ) ) {
+
+				$index_string = 'index.php/';
+
+				$path = str_replace( $index_string, '', $path );
+				$path = $index_string . $path;
+
+			}
+
+		}
+
+		// Make URL
+		$url = home_url( $path );
+
+		return apply_filters( 'ctfw_post_type_month_link', $url, $year, $month );
 
 	} else { // default with query string
 
@@ -169,6 +198,81 @@ function ctfw_post_type_get_month_link( $year, $month, $post_type = false ) {
 		return apply_filters( 'ctfw_post_type_month_link', home_url( '?m=' . $year . zeroise( $month, 2 ) . $post_type_param ), $year, $month );
 
 	}
+
+}
+
+/**
+ * Get month archives
+ *
+ * Return month/year of archives for a post type
+ *
+ * @since 1.7.1
+ * @global object $wpdb
+ * @global object $wp_locale
+ * @param string $post_type Post type slug
+ * @param array $args Arguments
+ * @return array Archives for use in templates
+ */
+function ctfw_get_month_archives( $post_type, $args = array() ) {
+
+	global $wpdb, $wp_locale;
+
+	// Default arguments
+	$args = wp_parse_args ( $args, array(
+		'limit'	=> 0, // no limit
+	) );
+
+	// Get limit
+	$limit = absint( $args['limit'] );
+	$sql_limit = '';
+	if ( $limit > 0 ) {
+		$sql_limit = $wpdb->prepare(
+			"LIMIT %d",
+			array(
+				$limit
+			)
+		);
+	}
+
+	// Get archive months
+	$archives = (array) $wpdb->get_results( $wpdb->prepare(
+		"
+			SELECT
+				YEAR(post_date) AS `year`,
+				MONTH(post_date) AS `month`,
+				count(ID) as posts
+			FROM $wpdb->posts
+			WHERE
+				post_type = %s
+				AND post_status = 'publish'
+			GROUP BY
+				YEAR(post_date),
+				MONTH(post_date)
+			ORDER BY post_date DESC
+			$sql_limit
+		",
+		array(
+			$post_type
+		)
+	) );
+
+	// Add extra data
+	foreach( $archives as $archive_key => $archive ) {
+
+		// 'count' instead of 'posts', for more uniform use in themes (matches taxonomy term object)
+		$archives[$archive_key]->count = $archives[$archive_key]->posts;
+
+		// 'name' that is automatically localized (key matches taxonomy term object)
+		/* translators: 1: month name, 2: 4-digit year */
+		$archives[$archive_key]->name = sprintf( _x('%1$s %2$d', 'month archive', 'church-theme-framework' ), $wp_locale->get_month( $archives[$archive_key]->month ), $archives[$archive_key]->year );
+
+		// URL
+		$archives[$archive_key]->url = ctfw_post_type_get_month_link( $archive->year, $archive->month, $post_type );
+
+	}
+
+	// Return filtered
+	return apply_filters( 'ctfw_get_month_archives', $archives, $post_type );
 
 }
 
@@ -205,11 +309,12 @@ function ctfw_redirect_archives_to_pages() {
 	// Loop content types
 	foreach ( $content_types as $content_type => $content_type_data ) {
 
-		// Get primary template for content type (first in array)
-		$page_template = ! empty( $content_type_data['page_templates'][0] ) ? $content_type_data['page_templates'][0] : false;
+		// Get templates for content type
+		// The first will be used if a page exists; otherwise the second, etc.
+		$page_templates = ! empty( $content_type_data['page_templates'] ) ? $content_type_data['page_templates'] : array();
 
-		// Have page template
-		if ( $page_template ) {
+		// Have at least one page template
+		if ( $page_templates ) {
 
 			// Get post type(s) for content type (probably just one)
 			$post_types = $content_type_data['post_types'];
@@ -226,24 +331,29 @@ function ctfw_redirect_archives_to_pages() {
 						// Only if archive is for specific post type
 						if ( is_post_type_archive( $post_type ) ) {
 
-							// Check if a page is using primary template
-							if ( $redirect_page = ctfw_get_page_by_template( $page_template ) ) {
+							// Loop each template in order of priority and redirect to first one that has page
+							foreach ( $page_templates as $page_template ) {
 
-								// Found a page?
-								if ( ! empty( $redirect_page->ID ) ) {
+								// Check if a page is the template
+								if ( $redirect_page = ctfw_get_page_by_template( $page_template ) ) {
 
-									// Get page data
-									$post_type_obj = get_post_type_object( $post_type );
+									// Found a page?
+									if ( ! empty( $redirect_page->ID ) ) {
 
-									// Don't redirect if URL is the same (post type and page have same slug); prevent infinite loop
-									if ( $redirect_page->post_name != $post_type_obj->rewrite['slug'] ) {
+										// Get page data
+										$post_type_obj = get_post_type_object( $post_type );
 
-										// Get URL
-										$page_url = get_permalink( $redirect_page->ID );
+										// Don't redirect if URL is the same (post type and page have same slug); prevent infinite loop
+										if ( $redirect_page->post_name != $post_type_obj->rewrite['slug'] ) {
 
-										// Go!
-										wp_redirect( $page_url, 301 );
-										exit;
+											// Get URL
+											$page_url = get_permalink( $redirect_page->ID );
+
+											// Go!
+											wp_redirect( $page_url, 301 );
+											exit;
+
+										}
 
 									}
 

@@ -6,7 +6,7 @@
  *
  * @package    Church_Theme_Framework
  * @subpackage Functions
- * @copyright  Copyright (c) 2013, churchthemes.com
+ * @copyright  Copyright (c) 2013 - 2015, churchthemes.com
  * @link       https://github.com/churchthemes/church-theme-framework
  * @license    http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  * @since      0.9
@@ -41,6 +41,7 @@ function ctfw_customize_option_id() {
  * Get customization value
  *
  * This gets a customization value for convenient use in templates, etc.
+ * It automatically fills in default
  *
  * @since 0.9
  * @param string $option Customization option
@@ -52,7 +53,7 @@ function ctfw_customization( $option ) {
 
 	// Get options array to pull value from
 	$options = get_option( ctfw_customize_option_id() );
-	
+
 	// Get default value
 	$defaults = ctfw_customize_defaults();
 	$default = isset( $defaults[$option]['value'] ) ? $defaults[$option]['value'] : '';
@@ -61,15 +62,15 @@ function ctfw_customization( $option ) {
 	if ( ! isset( $options[$option] ) ) {
 		$value = $default;
 	}
-	
+
 	// Option has been saved
 	else {
-		
+
 		// Value is empty when not allowed, use default
 		if ( empty( $options[$option] ) && ! empty( $defaults[$option]['no_empty'] ) ) {
 			$value = $default;
 		}
-		
+
 		// Otherwise, stick with current value
 		else {
 			$value = $options[$option];
@@ -77,9 +78,85 @@ function ctfw_customization( $option ) {
 
 	}
 
+	// Replace psuedo shortcodes (used in Footer notice, Icon URLs, etc.)
+	$value = str_replace( '[ctcom_site_name]', get_bloginfo( 'name' ), $value );
+	$value = str_replace( '[ctcom_current_year]', date( 'Y' ), $value );
+	$value = str_replace( '[ctcom_rss_url]', get_bloginfo( 'rss_url' ), $value );
+
 	// Return filtered
 	return apply_filters( 'ctfw_customization', $value, $option );
-	
+
+}
+
+/**
+ * Get raw customization value
+ *
+ * Get raw customization value without filling in of defaults
+ *
+ * @since 1.4.1
+ * @param string $option Customization option
+ * @return string Option value
+ */
+function ctfw_customization_raw( $option ) {
+
+	$value = '';
+
+	// Get options array to pull value from
+	$options = get_option( ctfw_customize_option_id() );
+
+	// Get value if set
+	if ( isset( $options[$option] ) ) {
+		$value = $options[$option];
+	} else { // empty if not set
+		$value = '';
+	}
+
+	// Return filtered
+	return apply_filters( 'ctfw_customization_raw', $value, $option );
+
+}
+
+/**
+ * Update customization value
+ *
+ * This updates a customization value in the option's array of settings
+ *
+ * @since 1.4.1
+ * @param string $option Customization option to update
+ * @param mixed $value Value to update with
+ */
+function ctfw_update_customization( $option, $value ) {
+
+	// Get array of options
+	$options = get_option( ctfw_customize_option_id() );
+
+	// Update the value
+	$options[$option] = $value;
+
+	// Save modified array back to option
+	update_option( ctfw_customize_option_id(), $options );
+
+}
+
+/**
+ * Unset customization
+ *
+ * This removes a customization from array of settings
+ *
+ * @since 1.4.1
+ * @param string $option Customization option to remove from array
+ */
+function ctfw_unset_customization( $option, $value ) {
+
+	// Get array of options
+	$options = get_option( ctfw_customize_option_id() );
+
+	// Update the value
+	unset( $options[$option] );
+
+	// Save modified array back to option
+	update_option( ctfw_customize_option_id(), $options );
+
 }
 
 /**
@@ -92,7 +169,27 @@ function ctfw_customization( $option ) {
  * @return array Customizer defaults
  */
 function ctfw_customize_defaults() {
-	return apply_filters( 'ctfw_customize_defaults', array() );
+
+	// Get cached defaults
+	// Customization settings are gotten dozens of times per pageload
+	// Caching them is a good idea in case default values every come from a function or query
+	$transient = 'ctfw_customize_defaults';
+	$defaults = get_transient( $transient );
+
+	// No cache; get defaults from theme, then cache
+	if ( false === $defaults ) {
+
+		// Get defaults from theme
+		$defaults = apply_filters( 'ctfw_customize_defaults', array() );
+
+		// Cache defaults
+		// 10 seconds good enough for one page load
+		set_transient( $transient, $defaults, 10 );
+
+	}
+
+	return $defaults;
+
 }
 
 /*******************************************
@@ -213,3 +310,40 @@ function ctfw_customize_sanitize_google_font( $setting, $input ) {
  * It is useful for social media URL lists in Customizer.
  */
 
+
+/*********************************************
+ * SCRIPTS & STYLES
+ *********************************************/
+
+/**
+ * Enqueue JavaScript for customizer controls
+ *
+ * @since 1.2
+ */
+function ctfw_customize_enqueue_scripts() {
+
+	// New media uploader in WP 3.5+
+	wp_enqueue_media();
+
+	// Main widgets script
+	wp_enqueue_script( 'ctfw-admin-widgets', ctfw_theme_url( CTFW_JS_DIR . '/admin-widgets.js' ), array( 'jquery' ), CTFW_THEME_VERSION ); // bust cache on update
+	wp_localize_script( 'ctfw-admin-widgets', 'ctfw_widgets', ctfw_admin_widgets_js_data() ); // see admin-widgets.php
+
+}
+
+add_action( 'customize_controls_print_scripts', 'ctfw_customize_enqueue_scripts' );
+
+/**
+ * Enqueue styles for customizer controls
+ *
+ * @since 1.2
+ */
+function ctfw_customize_enqueue_styles() {
+
+	// Admin widgets
+	// Same stylesheet used for Appearance > Widgets
+	wp_enqueue_style( 'ctfw-widgets', ctfw_theme_url( CTFW_CSS_DIR . '/admin-widgets.css' ), false, CTFW_THEME_VERSION ); // bust cache on update
+
+}
+
+add_action( 'customize_controls_print_styles', 'ctfw_customize_enqueue_styles' );
